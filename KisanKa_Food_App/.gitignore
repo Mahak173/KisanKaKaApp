@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# VS Code
+.vscode/
+
+# Android / iOS build
+android/app/build/
+android/build/
+ios/build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS
+.DS_Store
+
+# Environment
+.env
+.env.*
+
+# Expo generated
+expo-env.d.ts

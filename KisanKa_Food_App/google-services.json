@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "795648033643",
+    "project_id": "kisankakafoodapp",
+    "storage_bucket": "kisankakafoodapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:795648033643:android:38189d0527f476f16b022e",
+        "android_client_info": {
+          "package_name": "com.kisankafood.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbhNG-XRBeDP0wG_P4E9FoVzDRl0FK1QQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
