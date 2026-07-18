@@ -1,6 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "@react-native-firebase/auth";
 import { useState } from "react";
 import {
   Alert,

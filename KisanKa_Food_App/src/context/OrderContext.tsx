@@ -5,10 +5,11 @@ import {
   query,
   Timestamp,
   where,
-} from "firebase/firestore";
+} from "@react-native-firebase/firestore";
 import { createContext, useContext, useState } from "react";
 
 import { db } from "../firebase/firebaseConfig";
+import { logApiError, logApiResponse } from "../utils/apiLogger";
 
 const OrderContext = createContext<any>(null);
 
@@ -16,18 +17,19 @@ export const OrderProvider = ({ children }: any) => {
   const [orders, setOrders] = useState<any[]>([]);
 
   const placeOrder = async (order: any, userId: string) => {
+    const startedAt = Date.now();
     try {
-      console.log("placeOrder called");
-      console.log("Order Data:", order);
-      console.log("User ID:", userId);
-
       const docRef = await addDoc(collection(db, "orders"), {
         ...order,
         userId,
         createdAt: Timestamp.now(),
       });
 
-      console.log("Order saved successfully:", docRef.id);
+      logApiResponse("firestore", "addDoc orders", {
+        startedAt,
+        summary: `created ${docRef.id} for user ${userId}`,
+        body: order,
+      });
 
       setOrders((prev) => [
         ...prev,
@@ -39,12 +41,13 @@ export const OrderProvider = ({ children }: any) => {
 
       return docRef.id;
     } catch (error) {
-      console.log("ORDER SAVE ERROR:", error);
+      logApiError("firestore", "addDoc orders", error);
       throw error;
     }
   };
 
   const loadOrders = async (userId: string) => {
+    const startedAt = Date.now();
     try {
       const q = query(collection(db, "orders"), where("userId", "==", userId));
 
@@ -59,9 +62,15 @@ export const OrderProvider = ({ children }: any) => {
         (a: any, b: any) => b.createdAt?.seconds - a.createdAt?.seconds,
       );
 
+      logApiResponse("firestore", "getDocs orders", {
+        startedAt,
+        summary: `${data.length} orders for user ${userId}`,
+        body: data,
+      });
+
       setOrders(data);
     } catch (error) {
-      console.log("LOAD ORDER ERROR:", error);
+      logApiError("firestore", "getDocs orders", error);
     }
   };
 

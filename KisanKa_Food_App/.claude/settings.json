@@ -1,4 +1,16 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const p=require\\('./node_modules/firebase/package.json'\\); console.log\\(JSON.stringify\\(p.exports['./auth'],null,1\\)\\); console.log\\('version:', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/@firebase/auth/package.json'\\); console.log\\(JSON.stringify\\(p.exports,null,1\\).slice\\(0,1200\\)\\); console.log\\('version:', p.version\\)\")",
+      "Bash(node -p \"JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('app.json','utf8'\\)\\).expo.plugins || [], null, 1\\)\")",
+      "Bash(node -p \"JSON.parse\\(require\\('fs'\\).readFileSync\\('node_modules/@react-native-firebase/firestore/package.json','utf8'\\)\\).version\")",
+      "Bash(npm uninstall *)",
+      "Bash(./gradlew :app:assembleDebug)",
+      "Bash(./gradlew :app:signingReport)",
+      "Bash(grep -A6 \"Variant: debug$\")"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }

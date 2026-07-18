@@ -7,7 +7,9 @@ import {
   TextInput,
   View,
 } from "react-native";
-import auth from "@react-native-firebase/auth";
+import { signInWithPhoneNumber } from "@react-native-firebase/auth";
+
+import { auth } from "../firebase/firebaseConfig";
 
 export default function Login() {
   const [phone, setPhone] = useState("");
@@ -24,7 +26,7 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const confirmation = await auth().signInWithPhoneNumber(phone);
+      const confirmation = await signInWithPhoneNumber(auth, phone);
 
       setConfirm(confirmation);
 

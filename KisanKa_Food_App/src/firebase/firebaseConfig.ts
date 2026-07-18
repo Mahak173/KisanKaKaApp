@@ -1,15 +1,11 @@
-import { getApp, getApps, initializeApp } from "@react-native-firebase/app";
-import auth from "@react-native-firebase/auth";
+import { getApp } from "@react-native-firebase/app";
+import { getAuth } from "@react-native-firebase/auth";
+import { getFirestore } from "@react-native-firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-};
+// The native Firebase SDK is configured from android/app/google-services.json
+// (and GoogleService-Info.plist on iOS), so no JS config object is needed here.
+const app = getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-
-export { app, auth };
+export { app, auth, db };

@@ -9,7 +9,7 @@ import {
     View,
 } from "react-native";
 
-import { sendPasswordResetEmail } from "firebase/auth";
+import { sendPasswordResetEmail } from "@react-native-firebase/auth";
 import { auth } from "../firebase/firebaseConfig";
 
 
