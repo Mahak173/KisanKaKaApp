@@ -1,4 +1,27 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const p=require\\('./node_modules/firebase/package.json'\\); console.log\\(JSON.stringify\\(p.exports['./auth'],null,1\\)\\); console.log\\('version:', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/@firebase/auth/package.json'\\); console.log\\(JSON.stringify\\(p.exports,null,1\\).slice\\(0,1200\\)\\); console.log\\('version:', p.version\\)\")",
+      "Bash(node -p \"JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('app.json','utf8'\\)\\).expo.plugins || [], null, 1\\)\")",
+      "Bash(node -p \"JSON.parse\\(require\\('fs'\\).readFileSync\\('node_modules/@react-native-firebase/firestore/package.json','utf8'\\)\\).version\")",
+      "Bash(npm uninstall *)",
+      "Bash(./gradlew :app:assembleDebug)",
+      "Bash(./gradlew :app:signingReport)",
+      "Bash(grep -A6 \"Variant: debug$\")",
+      "Bash(node -e \"console.log\\(require\\('/Users/kapilparmar/KisanKaKaApp/KisanKa_Food_App/node_modules/react-native-svg/package.json'\\).version\\)\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"console.log\\(require\\('/Users/kapilparmar/KisanKaKaApp/KisanKa_Food_App/node_modules/lucide-react-native/package.json'\\).version\\)\")",
+      "Bash(git add *)",
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(git -C /Users/kapilparmar/KisanKaKaApp diff --cached --stat)",
+      "Bash(adb uninstall *)",
+      "Bash(curl -s \"https://firestore.googleapis.com/v1/projects/kisankakafoodapp/databases/\\(default\\)/documents/probe/probe?key=AIzaSyCbhNG-XRBeDP0wG_P4E9FoVzDRl0FK1QQ\")",
+      "Bash(adb shell *)"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }

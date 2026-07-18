@@ -1,20 +1,27 @@
-import { router } from "expo-router";
+import { sendPasswordResetEmail } from "@react-native-firebase/auth";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../firebase/firebaseConfig";
-
+import { PrimaryButton, ScreenHeader } from "@/components/ui";
+import { Radius, Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { auth } from "@/firebase/firebaseConfig";
 
 export default function ForgotPassword() {
+  const theme = useTheme();
+  const router = useRouter();
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -23,17 +30,13 @@ export default function ForgotPassword() {
     }
 
     try {
+      setLoading(true);
       await sendPasswordResetEmail(auth, email.trim());
 
       Alert.alert(
         "Email Sent",
         "A password reset link has been sent to your email.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/login"),
-          },
-        ],
+        [{ text: "OK", onPress: () => router.replace("/login") }],
       );
     } catch (error: any) {
       let message = "Something went wrong.";
@@ -42,81 +45,85 @@ export default function ForgotPassword() {
         case "auth/user-not-found":
           message = "No account found with this email.";
           break;
-
         case "auth/invalid-email":
           message = "Invalid email address.";
           break;
-
         default:
           message = error.message;
       }
 
       Alert.alert("Error", message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Forgot Password</Text>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={["top"]}>
+      <ScreenHeader title="" transparent />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">
+            Forgot Password
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            Enter your registered email address and we&apos;ll send you a reset link.
+          </Text>
 
-      <Text style={styles.subtitle}>Enter your registered email address.</Text>
+          <TextInput
+            placeholder="Email Address"
+            placeholderTextColor={theme.textMuted}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            style={[
+              styles.input,
+              { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text },
+            ]}
+            accessibilityLabel="Email address"
+          />
 
-      <TextInput
-        placeholder="Email Address"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
-        <Text style={styles.buttonText}>Send Reset Link</Text>
-      </TouchableOpacity>
-    </View>
+          <PrimaryButton label="Send Reset Link" onPress={handleResetPassword} loading={loading} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
-    padding: 25,
-    backgroundColor: "#fff",
+    padding: Spacing.four,
   },
-
   title: {
-    fontSize: 30,
-    fontWeight: "700",
-    color: "#3A6B35",
+    fontSize: 26,
+    fontWeight: "800",
   },
-
   subtitle: {
-    marginTop: 10,
-    marginBottom: 30,
-    color: "#666",
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: Spacing.two,
+    marginBottom: Spacing.four,
   },
-
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 25,
-  },
-
-  button: {
-    backgroundColor: "#3A6B35",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 17,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 14,
+    fontSize: 15,
+    marginBottom: Spacing.three,
   },
 });

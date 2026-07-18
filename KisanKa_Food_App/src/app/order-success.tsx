@@ -1,98 +1,77 @@
-import { router } from "expo-router";
-import { CheckCircle } from "lucide-react-native";
-import { Text, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
+import { CircleCheck } from "lucide-react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PrimaryButton } from "@/components/ui";
+import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+
 export default function OrderSuccessScreen() {
+  const theme = useTheme();
+  const router = useRouter();
+
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "#fff",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 25,
-      }}
-    >
-      <CheckCircle size={110} color="#3A6B35" strokeWidth={1.5} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+      <View style={styles.content}>
+        <View style={[styles.iconOuter, { backgroundColor: theme.primarySoft }]}>
+          <CircleCheck size={72} color={theme.primary} strokeWidth={1.5} />
+        </View>
 
-      <Text
-        style={{
-          fontSize: 28,
-          fontWeight: "700",
-          marginTop: 25,
-        }}
-      >
-        Order Placed!
-      </Text>
-
-      <Text
-        style={{
-          color: "#666",
-          fontSize: 16,
-          textAlign: "center",
-          marginTop: 10,
-          lineHeight: 24,
-        }}
-      >
-        Thank you for shopping with KisanKaka Food.
-      </Text>
-
-      <Text
-        style={{
-          color: "#666",
-          fontSize: 16,
-          textAlign: "center",
-          marginTop: 5,
-        }}
-      >
-        Your order has been placed successfully.
-      </Text>
-
-      <TouchableOpacity
-        onPress={() => router.replace("/")}
-        style={{
-          marginTop: 40,
-          width: "100%",
-          backgroundColor: "#3A6B35",
-          padding: 18,
-          borderRadius: 14,
-          alignItems: "center",
-        }}
-      >
-        <Text
-          style={{
-            color: "#fff",
-            fontWeight: "700",
-            fontSize: 17,
-          }}
-        >
-          Continue Shopping
+        <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">
+          Order Placed!
         </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={() => router.push("/product/orders")}
-        style={{
-          marginTop: 15,
-          width: "100%",
-          borderWidth: 2,
-          borderColor: "#3A6B35",
-          padding: 18,
-          borderRadius: 14,
-          alignItems: "center",
-        }}
-      >
-        <Text
-          style={{
-            color: "#3A6B35",
-            fontWeight: "700",
-            fontSize: 17,
-          }}
-        >
-          View My Orders
+        <Text style={[styles.message, { color: theme.textSecondary }]}>
+          Thank you for shopping with KisanKaka. Your order has been placed successfully.
         </Text>
-      </TouchableOpacity>
+
+        <PrimaryButton
+          label="View My Orders"
+          onPress={() => router.replace("/orders")}
+          style={styles.button}
+        />
+        <PrimaryButton
+          label="Continue Shopping"
+          variant="outline"
+          onPress={() => router.replace("/")}
+          style={styles.button}
+        />
+      </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.five,
+  },
+  iconOuter: {
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.four,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+  },
+  message: {
+    fontSize: 15,
+    lineHeight: 23,
+    textAlign: "center",
+    marginTop: Spacing.two,
+    maxWidth: 300,
+  },
+  button: {
+    alignSelf: "stretch",
+    marginTop: Spacing.three,
+  },
+});

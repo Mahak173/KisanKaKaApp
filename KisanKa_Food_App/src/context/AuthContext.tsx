@@ -1,5 +1,7 @@
-import auth from "@react-native-firebase/auth";
+import { onAuthStateChanged, signOut } from "@react-native-firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
+
+import { auth } from "../firebase/firebaseConfig";
 
 const AuthContext = createContext<any>(null);
 
@@ -8,7 +10,7 @@ export const AuthProvider = ({ children }: any) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged((firebaseUser) => {
+    const subscriber = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
     });
@@ -17,7 +19,7 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   const logout = async () => {
-    await auth().signOut();
+    await signOut(auth);
   };
 
   return (

@@ -1,117 +1,173 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { PackageSearch } from "lucide-react-native";
+import { useCallback, useEffect, useState } from "react";
+import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-
-const SHOP_URL = "fi8c7b-sr.myshopify.com";
+  EmptyState,
+  ErrorState,
+  ProductCard,
+  ScreenHeader,
+  Skeleton,
+} from "@/components/ui";
+import { Radius, Spacing } from "@/constants/theme";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useTheme } from "@/hooks/use-theme";
+import { getCollectionProducts } from "@/services/shopify";
+import { titleCase } from "@/utils/format";
 
 export default function CollectionScreen() {
-  const { id } = useLocalSearchParams();
+  const theme = useTheme();
+  const router = useRouter();
+  const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
+  const { addToCart } = useCart();
+  const { toggleWishlist, isFavourite } = useWishlist();
 
   const [products, setProducts] = useState<any[]>([]);
-  const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const screenTitle = title || titleCase(String(id ?? ""));
+
+  const loadProducts = useCallback(async () => {
+    try {
+      setError(false);
+      const data = await getCollectionProducts(String(id));
+      setProducts(data);
+    } catch {
+      setError(true);
+    }
+  }, [id]);
 
   useEffect(() => {
-    getCollectionProducts();
-  }, []);
+    loadProducts().finally(() => setLoading(false));
+  }, [loadProducts]);
 
-  const getCollectionProducts = async () => {
-    try {
-      const response = await fetch(
-        `https://${SHOP_URL}/collections/${id}/products.json`,
-      );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProducts();
+    setRefreshing(false);
+  }, [loadProducts]);
 
-      const data = await response.json();
-
-      setProducts(data.products || []);
-
-      setTitle(String(id).replace(/-/g, " "));
-    } catch (error) {
-      console.log(error);
-    }
+  const retry = () => {
+    setLoading(true);
+    loadProducts().finally(() => setLoading(false));
   };
 
+  const handleQuickAdd = useCallback(
+    (item: any) => {
+      const variant = item.variants?.[0];
+      if (!variant) return;
+      addToCart({
+        id: `gid://shopify/Product/${item.id}`,
+        variantId: `gid://shopify/ProductVariant/${variant.id}`,
+        title: item.title,
+        image: item.images?.[0]?.src,
+        price: variant.price,
+        quantity: 1,
+        size: variant.title,
+      });
+    },
+    [addToCart],
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>{title}</Text>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={["top"]}>
+      <ScreenHeader title={screenTitle} />
 
-      <FlatList
-        data={products}
-        numColumns={2}
-        keyExtractor={(item) => item.id.toString()}
-        columnWrapperStyle={styles.row}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/product/${item.id}`)}
-          >
-            <Image
-              source={{
-                uri: item.images?.[0]?.src,
-              }}
-              style={styles.image}
+      {loading ? (
+        <View style={styles.skeletonGrid}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={styles.skeletonCard}>
+              <Skeleton height={150} radius={Radius.lg} />
+              <Skeleton width="80%" height={14} style={{ marginTop: Spacing.two }} />
+              <Skeleton width="40%" height={14} style={{ marginTop: Spacing.one }} />
+            </View>
+          ))}
+        </View>
+      ) : error ? (
+        <ErrorState onRetry={retry} />
+      ) : (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => String(item.id)}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          windowSize={7}
+          removeClippedSubviews
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
+          }
+          renderItem={({ item }) => {
+            const variant = item.variants?.[0];
+            return (
+              <ProductCard
+                title={item.title}
+                imageUrl={item.images?.[0]?.src}
+                price={variant?.price}
+                compareAtPrice={variant?.compare_at_price}
+                unit={variant?.title !== "Default Title" ? variant?.title : undefined}
+                onPress={() => router.push(`/product/${item.id}`)}
+                onAddToCart={variant ? () => handleQuickAdd(item) : undefined}
+                isFavourite={isFavourite(String(item.id))}
+                onToggleFavourite={() =>
+                  toggleWishlist({
+                    id: String(item.id),
+                    variantId: variant?.id,
+                    title: item.title,
+                    price: variant?.price,
+                    image: item.images?.[0]?.src,
+                  })
+                }
+                style={styles.card}
+              />
+            );
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              icon={PackageSearch}
+              title="No Products Found"
+              message="This category doesn't have any products yet."
+              actionLabel="Browse Categories"
+              onAction={() => router.push("/categories")}
             />
-
-            <Text numberOfLines={2} style={styles.title}>
-              {item.title}
-            </Text>
-
-            <Text style={styles.price}>₹{item.variants?.[0]?.price}</Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+          }
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: 20,
   },
-
-  heading: {
-    fontSize: 28,
-    fontWeight: "700",
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    textTransform: "capitalize",
+  listContent: {
+    padding: Spacing.three,
+    flexGrow: 1,
   },
-
-  row: {
-    justifyContent: "space-between",
-    paddingHorizontal: 15,
+  columnWrapper: {
+    gap: Spacing.three,
+    marginBottom: Spacing.three,
   },
-
   card: {
-    width: "48%",
-    marginBottom: 20,
+    flex: 1,
+    maxWidth: "48.5%",
   },
-
-  image: {
-    width: "100%",
-    height: 220,
-    borderRadius: 20,
-    backgroundColor: "#f2f2f2",
+  skeletonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: Spacing.three,
+    gap: Spacing.three,
   },
-
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 10,
-  },
-
-  price: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 5,
+  skeletonCard: {
+    flexBasis: "47%",
+    flexGrow: 1,
   },
 });
