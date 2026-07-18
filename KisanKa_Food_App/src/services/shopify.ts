@@ -117,6 +117,110 @@ export const createShopifyCheckout = async (cart: any[]) => {
   }
 };
 
+/** Same endpoint `collection/[id]` previously fetched inline — moved here so screens share one integration. */
+export const getCollectionProducts = async (handle: string) => {
+  const startedAt = Date.now();
+  try {
+    const response = await fetch(
+      `https://${SHOP_URL}/collections/${handle}/products.json`,
+    );
+
+    const data = await response.json();
+
+    const products = data.products || [];
+
+    logApiResponse("shopify", `GET /collections/${handle}/products.json`, {
+      startedAt,
+      status: response.status,
+      summary: `${products.length} products`,
+      body: data,
+    });
+
+    return products;
+  } catch (error) {
+    logApiError("shopify", `GET /collections/${handle}/products.json`, error);
+    throw error;
+  }
+};
+
+/** Same GraphQL query `product/[id]` previously ran inline — moved here so screens share one integration. */
+export const getProductById = async (id: string) => {
+  const startedAt = Date.now();
+  const query = `
+{
+  products(first: 100) {
+    edges {
+      node {
+        id
+        title
+        description
+        vendor
+        productType
+        availableForSale
+
+        images(first: 10) {
+          edges {
+            node {
+              url
+            }
+          }
+        }
+
+        variants(first: 10) {
+          edges {
+            node {
+              id
+              title
+              price {
+                amount
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+  try {
+    const response = await fetch(
+      `https://${SHOP_URL}/api/2025-01/graphql.json`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Storefront-Access-Token": ACCESS_TOKEN,
+        },
+        body: JSON.stringify({ query }),
+      },
+    );
+
+    const json = await response.json();
+
+    const allProducts = json?.data?.products?.edges || [];
+
+    const foundProduct = allProducts.find((p: any) => {
+      const shopifyId = p.node.id.split("/").pop();
+      return shopifyId === String(id);
+    });
+
+    logApiResponse("shopify", "POST /graphql products", {
+      startedAt,
+      status: response.status,
+      summary: foundProduct
+        ? `found product ${foundProduct.node.title}`
+        : `product ${id} not found in ${allProducts.length} products`,
+      body: json,
+    });
+
+    return foundProduct?.node ?? null;
+  } catch (error) {
+    logApiError("shopify", "POST /graphql products", error);
+    throw error;
+  }
+};
+
 export const getBanners = async () => {
   const startedAt = Date.now();
   const query = `

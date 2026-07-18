@@ -8,7 +8,18 @@
       "Bash(npm uninstall *)",
       "Bash(./gradlew :app:assembleDebug)",
       "Bash(./gradlew :app:signingReport)",
-      "Bash(grep -A6 \"Variant: debug$\")"
+      "Bash(grep -A6 \"Variant: debug$\")",
+      "Bash(node -e \"console.log\\(require\\('/Users/kapilparmar/KisanKaKaApp/KisanKa_Food_App/node_modules/react-native-svg/package.json'\\).version\\)\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"console.log\\(require\\('/Users/kapilparmar/KisanKaKaApp/KisanKa_Food_App/node_modules/lucide-react-native/package.json'\\).version\\)\")",
+      "Bash(git add *)",
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(git -C /Users/kapilparmar/KisanKaKaApp diff --cached --stat)",
+      "Bash(adb uninstall *)",
+      "Bash(curl -s \"https://firestore.googleapis.com/v1/projects/kisankakafoodapp/databases/\\(default\\)/documents/probe/probe?key=AIzaSyCbhNG-XRBeDP0wG_P4E9FoVzDRl0FK1QQ\")",
+      "Bash(adb shell *)"
     ]
   },
   "enabledPlugins": {

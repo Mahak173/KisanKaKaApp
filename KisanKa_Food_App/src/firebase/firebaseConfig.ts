@@ -8,4 +8,10 @@ const app = getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+if (__DEV__) {
+  // Skip Play Integrity / reCAPTCHA so Firebase "test phone numbers" work
+  // on emulators without real SMS. Never enabled in release builds.
+  auth.settings.appVerificationDisabledForTesting = true;
+}
+
 export { app, auth, db };

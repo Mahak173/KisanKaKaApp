@@ -1,193 +1,198 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Search } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useRouter } from "expo-router";
+import { Search, SearchX, X } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getProducts } from "../services/shopify";
+
+import { EmptyState, ProductCard, ScreenHeader, Skeleton } from "@/components/ui";
+import { Radius, Shadows, Spacing } from "@/constants/theme";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useTheme } from "@/hooks/use-theme";
+import { getProducts } from "@/services/shopify";
 
 export default function SearchScreen() {
+  const theme = useTheme();
+  const router = useRouter();
+  const { addToCart } = useCart();
+  const { toggleWishlist, isFavourite } = useWishlist();
+
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<any[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     const data = await getProducts();
     setProducts(data);
-    setFilteredProducts(data);
-  };
+  }, []);
 
   useEffect(() => {
-    if (search.trim() === "") {
-      setFilteredProducts(products);
-      return;
-    }
+    loadProducts().finally(() => setLoading(false));
+  }, [loadProducts]);
 
-    const filtered = products.filter((item) =>
+  const filteredProducts = useMemo(() => {
+    if (search.trim() === "") return products;
+    return products.filter((item) =>
       item.title.toLowerCase().includes(search.toLowerCase()),
     );
-
-    setFilteredProducts(filtered);
   }, [search, products]);
 
+  const handleQuickAdd = useCallback(
+    (item: any) => {
+      const variant = item.variants?.[0];
+      if (!variant) return;
+      addToCart({
+        id: `gid://shopify/Product/${item.id}`,
+        variantId: `gid://shopify/ProductVariant/${variant.id}`,
+        title: item.title,
+        image: item.images?.[0]?.src,
+        price: variant.price,
+        quantity: 1,
+        size: variant.title,
+      });
+    },
+    [addToCart],
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search</Text>
-      </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={["top"]}>
+      <ScreenHeader title="Search" />
 
-      {/* Search Box */}
-      <View style={styles.searchBox}>
-        <Search size={20} color="#777" />
-
+      <View style={[styles.searchBox, { backgroundColor: theme.surface }, Shadows.card]}>
+        <Search size={20} color={theme.textMuted} />
         <TextInput
-          placeholder="Search products..."
-          placeholderTextColor="#888"
+          placeholder="Search for products..."
+          placeholderTextColor={theme.textMuted}
           value={search}
           onChangeText={setSearch}
-          style={styles.input}
+          autoFocus
+          returnKeyType="search"
+          style={[styles.input, { color: theme.text }]}
+          accessibilityLabel="Search for products"
         />
+        {search.length > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            hitSlop={8}
+            onPress={() => setSearch("")}>
+            <X size={18} color={theme.textMuted} />
+          </Pressable>
+        ) : null}
       </View>
 
-      {/* Products */}
-      <FlatList
-        data={filteredProducts}
-        numColumns={2}
-        keyExtractor={(item) => item.id.toString()}
-        columnWrapperStyle={{
-          justifyContent: "space-between",
-        }}
-        contentContainerStyle={{
-          padding: 15,
-          paddingBottom: 100,
-        }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/product/${item.id}`)}
-          >
-            <Image
-              source={{
-                uri: item.images[0]?.src,
-              }}
-              style={styles.image}
-            />
-
-            <Text numberOfLines={2} style={styles.title}>
-              {item.title}
-            </Text>
-
-            <Text style={styles.price}>₹{item.variants[0]?.price}</Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="search" size={55} color="#bbb" />
-            <Text style={styles.emptyTitle}>No Products Found</Text>
-            <Text style={styles.emptySub}>
-              Try searching with another keyword.
-            </Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.skeletonGrid}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={styles.skeletonCard}>
+              <Skeleton height={150} radius={Radius.lg} />
+              <Skeleton width="80%" height={14} style={{ marginTop: Spacing.two }} />
+              <Skeleton width="40%" height={14} style={{ marginTop: Spacing.one }} />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <FlatList
+          data={filteredProducts}
+          keyExtractor={(item) => String(item.id)}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          initialNumToRender={6}
+          windowSize={7}
+          removeClippedSubviews
+          renderItem={({ item }) => {
+            const variant = item.variants?.[0];
+            return (
+              <ProductCard
+                title={item.title}
+                imageUrl={item.images?.[0]?.src}
+                price={variant?.price}
+                compareAtPrice={variant?.compare_at_price}
+                unit={variant?.title !== "Default Title" ? variant?.title : undefined}
+                onPress={() => router.push(`/product/${item.id}`)}
+                onAddToCart={variant ? () => handleQuickAdd(item) : undefined}
+                isFavourite={isFavourite(String(item.id))}
+                onToggleFavourite={() =>
+                  toggleWishlist({
+                    id: String(item.id),
+                    variantId: variant?.id,
+                    title: item.title,
+                    price: variant?.price,
+                    image: item.images?.[0]?.src,
+                  })
+                }
+                style={styles.card}
+              />
+            );
+          }}
+          ListEmptyComponent={
+            search.trim() !== "" ? (
+              <EmptyState
+                icon={SearchX}
+                title="No Products Found"
+                message="Try searching with another keyword."
+              />
+            ) : (
+              <EmptyState
+                icon={SearchX}
+                title="No products to show"
+                message="Please check your connection and try again."
+                actionLabel="Retry"
+                onAction={() => {
+                  setLoading(true);
+                  loadProducts().finally(() => setLoading(false));
+                }}
+              />
+            )
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: 55,
   },
-  header: {
-    paddingTop: 10,
-    paddingBottom: 18,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#fff",
-  },
-
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#3A6B35",
-  },
-
-  searchContainer: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f4f4f4",
-    marginHorizontal: 15,
-    paddingHorizontal: 15,
-    borderRadius: 14,
-    height: 52,
+    gap: Spacing.two,
+    marginHorizontal: Spacing.three,
+    marginBottom: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    minHeight: 48,
+    borderRadius: Radius.lg,
   },
-
   input: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-  },
-
-  card: {
-    width: "48%",
-    marginBottom: 22,
-  },
-
-  image: {
-    width: "100%",
-    height: 220,
-    borderRadius: 18,
-    backgroundColor: "#f3f3f3",
-  },
-
-  title: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  price: {
-    marginTop: 5,
-    color: "#3A6B35",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
-  empty: {
-    marginTop: 120,
-    alignItems: "center",
-  },
-
-  emptyTitle: {
-    marginTop: 20,
-    fontSize: 22,
-    fontWeight: "700",
-  },
-
-  emptySub: {
-    color: "#777",
-    marginTop: 10,
     fontSize: 15,
+    paddingVertical: Spacing.two,
+  },
+  listContent: {
+    padding: Spacing.three,
+    flexGrow: 1,
+  },
+  columnWrapper: {
+    gap: Spacing.three,
+    marginBottom: Spacing.three,
+  },
+  card: {
+    flex: 1,
+    maxWidth: "48.5%",
+  },
+  skeletonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  skeletonCard: {
+    flexBasis: "47%",
+    flexGrow: 1,
   },
 });

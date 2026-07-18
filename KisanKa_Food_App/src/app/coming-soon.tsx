@@ -1,22 +1,19 @@
-import { BellRing } from "lucide-react-native";
+import { useLocalSearchParams } from "expo-router";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ComingSoon, ScreenHeader } from "@/components/ui";
 import { useTheme } from "@/hooks/use-theme";
 
-/** Notifications have no backing API yet — show a Coming Soon state instead of a fake screen. */
-export default function Notifications() {
+/** Generic placeholder for features whose APIs are not integrated yet. */
+export default function ComingSoonScreen() {
   const theme = useTheme();
+  const { title } = useLocalSearchParams<{ title?: string }>();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={["top"]}>
-      <ScreenHeader title="Notifications" />
-      <ComingSoon
-        icon={BellRing}
-        title="Notifications Coming Soon"
-        message="Order updates and offers will land here in an upcoming release."
-      />
+      <ScreenHeader title={title || "Coming Soon"} />
+      <ComingSoon />
     </SafeAreaView>
   );
 }
