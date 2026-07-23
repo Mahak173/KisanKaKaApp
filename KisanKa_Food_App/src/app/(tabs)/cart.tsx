@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { ShoppingCart, Trash2 } from "lucide-react-native";
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { createShopifyCheckout } from "@/services/shopify";
 
 import {
   AppImage,
@@ -27,16 +28,37 @@ export default function CartScreen() {
     0,
   );
 
-  const handleCheckout = () => {
-    if (!user) {
-      Alert.alert("Login Required", "Please login to continue to checkout.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Login", onPress: () => router.push("/login") },
-      ]);
+  const handleCheckout = async () => {
+  if (!user) {
+    Alert.alert("Login Required", "Please login to continue to checkout.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Login", onPress: () => router.push("/login") },
+    ]);
+    return;
+  }
+
+  try {
+    const checkoutUrl = await createShopifyCheckout(cart);
+
+    if (!checkoutUrl) {
+      Alert.alert(
+        "Checkout Error",
+        "Unable to create Shopify checkout."
+      );
       return;
     }
-    router.push("/address");
-  };
+
+    router.push({
+      pathname: "/checkout",
+      params: {
+        url: encodeURIComponent(checkoutUrl),
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    Alert.alert("Error", "Something went wrong.");
+  }
+};
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={["top"]}>

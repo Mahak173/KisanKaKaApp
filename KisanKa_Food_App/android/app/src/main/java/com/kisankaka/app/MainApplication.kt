@@ -1,4 +1,4 @@
-package com.mahak1234.kisankaka
+package com.kisankaka.app
 
 import android.app.Application
 import android.content.res.Configuration
