@@ -1,4 +1,4 @@
-package com.mahak1234.kisankaka
+package com.kisankaka.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

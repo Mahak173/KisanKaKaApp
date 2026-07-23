@@ -11,7 +11,7 @@
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.kisankafood.app",
+      "package": "com.kisankaka.app",
       "googleServicesFile": "./google-services.json"
     },
     "web": {

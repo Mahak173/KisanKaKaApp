@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrderContext";
 import { useTheme } from "@/hooks/use-theme";
+import { sendOrderPlacedNotification } from "@/services/notificationServices";
 
 export default function Checkout() {
   const theme = useTheme();
@@ -24,11 +25,7 @@ export default function Checkout() {
 
   const selectedAddress = address ? JSON.parse(String(address)) : null;
   const checkoutUrl = decodeURIComponent(String(url));
-
-  const totalPrice = cart.reduce(
-    (sum: number, item: any) => sum + Number(item.price) * item.quantity,
-    0,
-  );
+const totalPrice = cart.reduce( (sum: number, item: any) => sum + Number(item.price) * item.quantity, 0, );
 
   const injectedJS = `
 (function() {
@@ -57,39 +54,49 @@ true;
           thirdPartyCookiesEnabled
           injectedJavaScriptBeforeContentLoaded={injectedJS}
           onLoadEnd={() => setLoading(false)}
-          onNavigationStateChange={async (navState) => {
-            if (
-              !redirected.current &&
-              (navState.url.includes("/thank-you") ||
-                navState.url.includes("/thank_you") ||
-                navState.url.includes("/orders/"))
-            ) {
-              redirected.current = true;
+           onShouldStartLoadWithRequest={(request) => {
+    const url = request.url;
 
-              try {
-                if (user) {
-                  await placeOrder(
-                    {
-                      products: cart,
-                      address: selectedAddress,
-                      total: totalPrice,
-                      paymentStatus: "Paid",
-                      orderStatus: "Placed",
-                    },
-                    user.uid,
-                  );
-                }
+    console.log("REQUEST:", url);
 
-                clearCart();
-                router.replace("/order-success");
-              } catch {
-                // Payment already succeeded on Shopify — still take the user forward.
-                clearCart();
-                router.replace("/order-success");
-              }
-            }
-          }}
-        />
+    if (
+      !redirected.current &&
+      (
+        url.includes("/thank-you") ||
+        url.includes("/thank_you")
+      )
+    ) {
+      redirected.current = true;
+
+      (async () => {
+        try {
+          if (user) {
+            await placeOrder(
+              {
+                products: cart,
+                address: selectedAddress,
+                total: totalPrice,
+                orderStatus: "Placed",
+              },
+              user.uid
+            );
+          }
+
+          await sendOrderPlacedNotification();
+          clearCart();
+          router.replace("/order-success");
+        } catch {
+          clearCart();
+          router.replace("/order-success");
+        }
+      })();
+
+      return false; // Stop Shopify Thank You page
+    }
+
+    return true;
+  }}
+/>
         {loading ? (
           <View style={[styles.loader, { backgroundColor: theme.background }]}>
             <ActivityIndicator size="large" color={theme.primary} />
